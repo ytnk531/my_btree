@@ -29,6 +29,38 @@ class Node
     end
     @edges.last.find(key)
   end
+
+  def insertion_candidate_of(entry)
+    return self if @edges.empty?
+
+    key = entry.key
+    (0...@entries.size).each do |i|
+      puts self, i
+      return @edges[i].insertion_candidate_of(entry) if key < @entries[i].key
+    end
+    @edges.last.insertion_candidate_of(entry)
+  end
+
+  def insert(entry)
+    key = entry.key
+    pp @entries
+    @entries.prepend(entry) if key < @entries[0].key
+    (0...entries.size-1).each do
+      if @entries[i].key < key && key < @entries[i+1].key
+        @entries.insert(i+1, entry)
+        return
+      end
+    end
+
+    @entries.append(entry)
+  end
+
+  def print
+    puts "{entries: #{@entries}"
+    puts "edges ["
+    @edges.each { _1.print }
+    puts "]}"
+  end
 end
 
 class BTree
@@ -38,6 +70,15 @@ class BTree
 
   def find(key)
     @root.find(key)
+  end
+
+  def insert(entry)
+    c = @root.insertion_candidate_of(entry)
+    c.insert(entry)
+  end
+
+  def print
+    @root.print
   end
 end
 
@@ -61,4 +102,7 @@ tree = BTree.new(
 )
 
 puts tree.find(5)
+puts tree.insert(Entry.new(7, "x"))
+puts tree.print
+puts tree.find(7)
 
