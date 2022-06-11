@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Entry
   attr_reader :key, :value
 
@@ -5,18 +7,24 @@ class Entry
     @key = key
     @value = value
   end
-
-  def to_s
-    "#{super} #{@key}, #{@value}"
-  end
 end
 
 class Node
   attr_reader :entries, :edges
+  attr_accessor :parent
 
   def initialize(entries, edges: [])
     @entries = entries
     @edges = edges
+    @max_entries = 4
+
+    @edges.each do
+      _1&.parent=self
+    end
+  end
+
+  def leaf_node?
+    @edges.empty?
   end
 
   def find(key)
@@ -31,35 +39,48 @@ class Node
   end
 
   def insertion_candidate_of(entry)
-    return self if @edges.empty?
+    return self if leaf_node?
 
     key = entry.key
-    (0...@entries.size).each do |i|
-      puts self, i
-      return @edges[i].insertion_candidate_of(entry) if key < @entries[i].key
+    edge_index = (0...@entries.size).find(-> { @entries.size }) do |i|
+      key < @entries[i].key
     end
-    @edges.last.insertion_candidate_of(entry)
+    @edges[edge_index].insertion_candidate_of(entry)
   end
 
   def insert(entry)
-    key = entry.key
-    pp @entries
-    @entries.prepend(entry) if key < @entries[0].key
-    (0...entries.size-1).each do
-      if @entries[i].key < key && key < @entries[i+1].key
-        @entries.insert(i+1, entry)
-        return
-      end
-    end
+    entries.insert(insert_position(entries, entry.key), entry)
 
-    @entries.append(entry)
+    if should_split?
+      left, center, right = split(@entries)
+      parent.insert_with_node(center, Node.new(left))
+      @entries = right
+    end
   end
 
-  def print
-    puts "{entries: #{@entries}"
-    puts "edges ["
-    @edges.each { _1.print }
-    puts "]}"
+  def insert_with_node(entry, left)
+    i = insert_position(entries, entry.key)
+
+    @entries.insert(i, entry)
+    @edges.insert(i, left)
+  end
+
+  private
+
+  def center_index
+    @max_entries / 2
+  end
+
+  def insert_position(entries, key)
+    (0...entries.size).find(-> { entries.size }) { |i| key < entries[i].key }
+  end
+
+  def should_split?
+    entries.size > @max_entries
+  end
+
+  def split(entries)
+    [entries[0...center_index], entries[center_index], entries[center_index + 1..-1]]
   end
 end
 
@@ -78,31 +99,58 @@ class BTree
   end
 
   def print
-    @root.print
+    pp @root
   end
 end
 
+def e(key, value)
+  Entry.new(key, value)
+end
+
 tree = BTree.new(
-           Node.new(
-             [Entry.new(3, "C")],
-           edges: [
-               Node.new([
-                 Entry.new(1, "A"),
-                 Entry.new(2, "B")
+  Node.new(
+    [e(66, nil), e(78, nil)],
+    edges: [
+      nil,
+      Node.new(
+        [
+          e(68, nil),
+          e(69, nil),
+          e(71, nil),
+          e(76, nil)
+        ]
+      ),
+      nil
+    ]
+  )
+)
+tree.print
+tree.insert(e(72, nil))
+tree.print
+
+tree = BTree.new(
+  Node.new(
+    [Entry.new(3, 'C')],
+    edges: [
+      Node.new([
+                 Entry.new(1, 'A'),
+                 Entry.new(2, 'B')
                ]),
-               Node.new([
-                 Entry.new(4, "D"),
+      Node.new([
+                 Entry.new(4, 'D')
                ], edges: [
-                 Node.new([Entry.new(2, "D")]),
-                 Node.new([Entry.new(5, "E")])
-               ]
-                       )
-             ]
-          )
+                 Node.new([Entry.new(2, 'D')]),
+                 Node.new([
+                            Entry.new(5, 'E'),
+                            Entry.new(6, 'E'),
+                            Entry.new(7, 'E'),
+                            Entry.new(8, 'E')
+                          ])
+               ])
+    ]
+  )
 )
 
-puts tree.find(5)
-puts tree.insert(Entry.new(7, "x"))
-puts tree.print
-puts tree.find(7)
-
+tree.insert(Entry.new(9, 'x'))
+tree.find(9)
+tree.print
