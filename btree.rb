@@ -48,24 +48,41 @@ class Node
     @edges[edge_index].insertion_candidate_of(entry)
   end
 
-  def insert(entry)
-    entries.insert(insert_position(entries, entry.key), entry)
-
-    if should_split?
-      left, center, right = split(@entries)
-      parent.insert_with_node(center, Node.new(left))
-      @entries = right
-    end
-  end
-
-  def insert_with_node(entry, left)
+  def insert(entry, node: nil)
     i = insert_position(entries, entry.key)
 
     @entries.insert(i, entry)
-    @edges.insert(i, left)
+    add_edge(i, node) if node
+
+    if should_split?
+      left, center, right = split(@entries)
+      left_edges, right_edges = split_edge(@edges)
+
+      if root?
+        self.parent = Node.new([], edges: [self])
+        $tree.root = parent
+      end
+
+      parent.insert(center, node: Node.new(left, edges: left_edges))
+      @entries = right
+      @edges = right_edges
+    end
+  end
+
+  def split_edge(edges)
+    [edges[0..center_index] || [], edges[center_index+1..-1] || []]
+  end
+
+  def root?
+    parent.nil?
   end
 
   private
+
+  def add_edge(index, node)
+    @edges.insert(index, node)
+    node.parent = self
+  end
 
   def center_index
     @max_entries / 2
@@ -84,7 +101,30 @@ class Node
   end
 end
 
+# NODE X
+#   5 10 15 20
+# A  B  C  D  E
+#
+# insert 17
+#
+#
+#   5 10 15 17 20
+# A  B  C  D  E
+#
+# Y
+#   5  10
+# A  B
+#
+# X
+#   17 20
+# C  D  E
+#
+#  15
+# X  Y
+
 class BTree
+  attr_accessor :root
+
   def initialize(root)
     @root = root
   end
@@ -107,26 +147,6 @@ def e(key, value)
   Entry.new(key, value)
 end
 
-tree = BTree.new(
-  Node.new(
-    [e(66, nil), e(78, nil)],
-    edges: [
-      nil,
-      Node.new(
-        [
-          e(68, nil),
-          e(69, nil),
-          e(71, nil),
-          e(76, nil)
-        ]
-      ),
-      nil
-    ]
-  )
-)
-tree.print
-tree.insert(e(72, nil))
-tree.print
 
 tree = BTree.new(
   Node.new(
@@ -151,6 +171,11 @@ tree = BTree.new(
   )
 )
 
-tree.insert(Entry.new(9, 'x'))
-tree.find(9)
+$tree = tree
+
+(10..100).each do |i|
+  tree.insert(e(i, nil))
+end
+# tree.insert(Entry.new(9, 'x'))
+# tree.find(9)
 tree.print
