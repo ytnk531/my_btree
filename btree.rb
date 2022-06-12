@@ -54,19 +54,21 @@ class Node
     @entries.insert(i, entry)
     add_edge(i, node) if node
 
-    if should_split?
-      left, center, right = split(@entries)
-      left_edges, right_edges = split_edge(@edges)
+    split_node if should_split?
+  end
 
-      if root?
-        self.parent = Node.new([], edges: [self])
-        $tree.root = parent
-      end
-
-      parent.insert(center, node: Node.new(left, edges: left_edges))
-      @entries = right
-      @edges = right_edges
+  def split_node
+    if root?
+      self.parent = Node.new([], edges: [self])
+      $tree.root = parent
     end
+
+    left, center, right = split(@entries)
+    left_edges, right_edges = split_edge(@edges)
+
+    parent.insert(center, node: Node.new(left, edges: left_edges))
+    @entries = right
+    @edges = right_edges
   end
 
   def split_edge(edges)
