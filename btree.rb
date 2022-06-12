@@ -101,27 +101,6 @@ class Node
   end
 end
 
-# NODE X
-#   5 10 15 20
-# A  B  C  D  E
-#
-# insert 17
-#
-#
-#   5 10 15 17 20
-# A  B  C  D  E
-#
-# Y
-#   5  10
-# A  B
-#
-# X
-#   17 20
-# C  D  E
-#
-#  15
-# X  Y
-
 class BTree
   attr_accessor :root
 
@@ -176,6 +155,4 @@ $tree = tree
 (10..100).each do |i|
   tree.insert(e(i, nil))
 end
-# tree.insert(Entry.new(9, 'x'))
-# tree.find(9)
 tree.print
