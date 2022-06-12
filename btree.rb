@@ -155,4 +155,6 @@ $tree = tree
 (10..100).each do |i|
   tree.insert(e(i, nil))
 end
+tree.find(16)
 tree.print
+# tree.print
